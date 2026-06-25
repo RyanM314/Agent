@@ -161,7 +161,7 @@
 
 <script>
 var STATE={documentId:null,filename:null,sessionId:null,iteration:0,fullUpdatedNotes:'',processedAt:null,researchSources:[],sectionComparisons:[],selfCorrection:null,modelUsed:''};
-var API_BASE='http://localhost:8000';
+var API_BASE='https://agent-wiuf.onrender.com';
 var QUOTA_POLL_INTERVAL=null;
 
 document.addEventListener('DOMContentLoaded',function(){checkHealth();checkQuota();setupUpload();setupPromptInput();updateProcessBtn();QUOTA_POLL_INTERVAL=setInterval(checkQuota,30000);});

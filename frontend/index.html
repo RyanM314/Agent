@@ -3,170 +3,525 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Agentic RAG — Lecturer Notes Updater</title>
+<title>Vermax — AI Agentic RAG Assistant</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script>tailwind.config={theme:{extend:{colors:{primary:{50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a'},accent:{50:'#f0fdf4',100:'#dcfce7',200:'#bbf7d0',300:'#86efac',400:'#4ade80',500:'#22c55e',600:'#16a34a',700:'#15803d'}}}}}</script>
 <style>
-*{box-sizing:border-box}
-.drop-zone-active{border-color:#3b82f6!important;background-color:#eff6ff!important}
-.fade-in{animation:fadeIn .4s ease-out}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.spinner{animation:spin .8s linear infinite}
+/* ── Base Reset & Typography ───────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#e4e4e7;overflow-x:hidden}
+
+/* ── Animated Background ───────────────────────────────────────────────── */
+.bg-grid{background-image:radial-gradient(rgba(59,130,246,0.08) 1px,transparent 1px);background-size:40px 40px}
+.bg-glow{position:fixed;top:-40%;left:-20%;width:80%;height:80%;background:radial-gradient(ellipse at center,rgba(59,130,246,0.12) 0%,transparent 70%);pointer-events:none;z-index:0;animation:glowPulse 8s ease-in-out infinite alternate}
+.bg-glow-2{position:fixed;bottom:-30%;right:-20%;width:70%;height:70%;background:radial-gradient(ellipse at center,rgba(34,197,94,0.08) 0%,transparent 70%);pointer-events:none;z-index:0;animation:glowPulse2 10s ease-in-out infinite alternate}
+@keyframes glowPulse{0%{opacity:0.5;transform:scale(1)}100%{opacity:1;transform:scale(1.15)}}
+@keyframes glowPulse2{0%{opacity:0.3;transform:scale(1)}100%{opacity:0.8;transform:scale(1.2)}}
+
+/* ── Floating Particles ────────────────────────────────────────────────── */
+.particle{position:fixed;border-radius:50%;pointer-events:none;z-index:0;opacity:0.15}
+@keyframes float1{0%,100%{transform:translateY(0) translateX(0)}25%{transform:translateY(-30px) translateX(15px)}50%{transform:translateY(-10px) translateX(-10px)}75%{transform:translateY(-40px) translateX(20px)}}
+@keyframes float2{0%,100%{transform:translateY(0) translateX(0)}25%{transform:translateY(20px) translateX(-15px)}50%{transform:translateY(-20px) translateX(10px)}75%{transform:translateY(10px) translateX(-20px)}}
+
+/* ── Glassmorphism ─────────────────────────────────────────────────────── */
+.glass{border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.glass-hover:hover{border-color:rgba(59,130,246,0.2);background:rgba(59,130,246,0.06);box-shadow:0 0 30px rgba(59,130,246,0.05)}
+.glass-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:all 0.3s cubic-bezier(0.4,0,0.2,1)}
+.glass-card:hover{border-color:rgba(59,130,246,0.15);background:rgba(59,130,246,0.04);box-shadow:0 8px 40px rgba(59,130,246,0.06);transform:translateY(-2px)}
+.glass-input{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#e4e4e7;transition:all 0.3s ease}
+.glass-input:focus{border-color:rgba(59,130,246,0.4);background:rgba(255,255,255,0.06);box-shadow:0 0 20px rgba(59,130,246,0.08);outline:none}
+.glass-input::placeholder{color:rgba(228,228,231,0.35)}
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+.btn-primary{background:linear-gradient(135deg,rgba(59,130,246,0.9),rgba(37,99,235,0.9));border:1px solid rgba(59,130,246,0.2);color:white;transition:all 0.3s cubic-bezier(0.4,0,0.2,1);cursor:pointer;position:relative;overflow:hidden}
+.btn-primary::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);transition:left 0.5s}
+.btn-primary:hover::before{left:100%}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(59,130,246,0.2);border-color:rgba(59,130,246,0.4)}
+.btn-primary:active{transform:translateY(0);box-shadow:0 2px 10px rgba(59,130,246,0.15)}
+.btn-primary:disabled{background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.06);color:rgba(255,255,255,0.25);cursor:not-allowed;transform:none;box-shadow:none}
+.btn-primary:disabled::before{display:none}
+
+.btn-accent{background:linear-gradient(135deg,rgba(34,197,94,0.9),rgba(22,163,74,0.9));border:1px solid rgba(34,197,94,0.2);color:white;transition:all 0.3s cubic-bezier(0.4,0,0.2,1);cursor:pointer;position:relative;overflow:hidden}
+.btn-accent::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);transition:left 0.5s}
+.btn-accent:hover::before{left:100%}
+.btn-accent:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(34,197,94,0.2);border-color:rgba(34,197,94,0.4)}
+.btn-accent:active{transform:translateY(0)}
+
+.btn-outline{background:transparent;border:1px solid rgba(255,255,255,0.12);color:rgba(228,228,231,0.8);transition:all 0.3s ease;cursor:pointer}
+.btn-outline:hover{border-color:rgba(59,130,246,0.3);background:rgba(59,130,246,0.06);color:white}
+
+.btn-ghost{background:transparent;border:none;color:rgba(228,228,231,0.5);transition:all 0.2s ease;cursor:pointer}
+.btn-ghost:hover{color:rgba(228,228,231,0.8);background:rgba(255,255,255,0.05)}
+
+/* ── Animations ────────────────────────────────────────────────────────── */
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInScale{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideInRight{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
 @keyframes spin{to{transform:rotate(360deg)}}
-.comparison-panel{scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent}
-.comparison-panel::-webkit-scrollbar{width:6px}
-.comparison-panel::-webkit-scrollbar-track{background:transparent}
-.comparison-panel::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
-.notes-output h1{font-size:1.75rem;font-weight:700;margin-top:1.5rem;margin-bottom:.75rem;color:#1e293b;border-bottom:2px solid #e2e8f0;padding-bottom:.4rem}
-.notes-output h2{font-size:1.4rem;font-weight:600;margin-top:1.25rem;margin-bottom:.6rem;color:#334155}
-.notes-output h3{font-size:1.15rem;font-weight:600;margin-top:1rem;margin-bottom:.5rem;color:#475569}
-.notes-output p{margin-bottom:.75rem;line-height:1.7;color:#334155}
-.notes-output ul,.notes-output ol{margin-left:1.5rem;margin-bottom:.75rem}
-.notes-output li{margin-bottom:.25rem;line-height:1.6}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes typing{0%{opacity:0.3}50%{opacity:1}100%{opacity:0.3}}
+@keyframes gradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes borderGlow{0%,100%{border-color:rgba(59,130,246,0.15)}50%{border-color:rgba(59,130,246,0.35)}}
+@keyframes ripple{to{transform:scale(4);opacity:0}}
+
+.animate-fade-in{animation:fadeIn 0.5s cubic-bezier(0.4,0,0.2,1) both}
+.animate-fade-in-up{animation:fadeInUp 0.6s cubic-bezier(0.4,0,0.2,1) both}
+.animate-fade-in-scale{animation:fadeInScale 0.4s cubic-bezier(0.4,0,0.2,1) both}
+.animate-slide-in{animation:slideIn 0.5s cubic-bezier(0.4,0,0.2,1) both}
+.animate-slide-in-right{animation:slideInRight 0.5s cubic-bezier(0.4,0,0.2,1) both}
+.animate-slide-up{animation:slideUp 0.6s cubic-bezier(0.4,0,0.2,1) both}
+.animate-shimmer{background:linear-gradient(90deg,rgba(255,255,255,0.03),rgba(255,255,255,0.08),rgba(255,255,255,0.03));background-size:200% 100%;animation:shimmer 2s infinite}
+.animate-border-glow{animation:borderGlow 2s ease-in-out infinite}
+
+.stagger-1{animation-delay:0.1s}
+.stagger-2{animation-delay:0.2s}
+.stagger-3{animation-delay:0.3s}
+.stagger-4{animation-delay:0.4s}
+.stagger-5{animation-delay:0.5s}
+.stagger-6{animation-delay:0.6s}
+.stagger-7{animation-delay:0.7s}
+
+/* ── Drop Zone ─────────────────────────────────────────────────────────── */
+.drop-zone{border:1.5px dashed rgba(255,255,255,0.12);border-radius:16px;padding:40px 24px;text-align:center;cursor:pointer;transition:all 0.4s cubic-bezier(0.4,0,0.2,1);position:relative;overflow:hidden}
+.drop-zone::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(59,130,246,0.03),rgba(34,197,94,0.03));opacity:0;transition:opacity 0.4s}
+.drop-zone:hover::before{opacity:1}
+.drop-zone:hover{border-color:rgba(59,130,246,0.3);transform:translateY(-2px);box-shadow:0 8px 40px rgba(59,130,246,0.04)}
+.drop-zone-active{border-color:rgba(59,130,246,0.5)!important;background:rgba(59,130,246,0.06)!important;transform:translateY(-2px);box-shadow:0 0 30px rgba(59,130,246,0.1)!important}
+.drop-zone.drag-over .drop-icon{transform:scale(1.2);color:rgba(59,130,246,0.8)}
+
+/* ── Message Bubbles ───────────────────────────────────────────────────── */
+.message-bubble{max-width:85%;padding:16px 20px;border-radius:18px;animation:slideUp 0.4s cubic-bezier(0.4,0,0.2,1) both;line-height:1.6;font-size:0.95rem;position:relative}
+.message-bubble.user{background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(37,99,235,0.1));border:1px solid rgba(59,130,246,0.12);border-bottom-right-radius:6px;margin-left:auto}
+.message-bubble.user::after{content:'';position:absolute;bottom:0;right:-6px;width:12px;height:12px;background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(37,99,235,0.1));border-right:1px solid rgba(59,130,246,0.12);border-bottom:1px solid rgba(59,130,246,0.12);border-radius:0 0 4px 0;transform:rotate(-45deg)}
+.message-bubble.assistant{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-bottom-left-radius:6px;margin-right:auto}
+.message-bubble.assistant::after{content:'';position:absolute;bottom:0;left:-6px;width:12px;height:12px;background:rgba(255,255,255,0.04);border-left:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06);border-radius:0 0 0 4px;transform:rotate(45deg)}
+
+/* ── Typing Indicator ──────────────────────────────────────────────────── */
+.typing-dots{display:flex;gap:5px;padding:12px 0}
+.typing-dots span{width:8px;height:8px;border-radius:50%;background:rgba(59,130,246,0.4);animation:typing 1.4s ease-in-out infinite}
+.typing-dots span:nth-child(2){animation-delay:0.2s}
+.typing-dots span:nth-child(3){animation-delay:0.4s}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────── */
+.scroll-custom{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.1) transparent}
+.scroll-custom::-webkit-scrollbar{width:5px}
+.scroll-custom::-webkit-scrollbar-track{background:transparent}
+.scroll-custom::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08);border-radius:10px}
+.scroll-custom::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.15)}
+
+/* ── Steps ─────────────────────────────────────────────────────────────── */
+.step-item{display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;z-index:1;cursor:pointer;transition:all 0.3s}
+.step-item:hover .step-circle{transform:scale(1.1)}
+.step-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;transition:all 0.4s cubic-bezier(0.4,0,0.2,1);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(228,228,231,0.5)}
+.step-line{width:80px;height:2px;background:rgba(255,255,255,0.06);margin-bottom:24px;position:relative;overflow:hidden}
+.step-line::after{content:'';position:absolute;left:-100%;top:0;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(59,130,246,0.4),transparent);animation:shimmer 3s infinite}
+.step-item.active .step-circle{background:linear-gradient(135deg,rgba(59,130,246,0.9),rgba(37,99,235,0.9));border-color:rgba(59,130,246,0.4);color:white;box-shadow:0 0 20px rgba(59,130,246,0.15)}
+.step-item.active .step-label{color:rgba(59,130,246,0.9)}
+.step-item.completed .step-circle{background:linear-gradient(135deg,rgba(34,197,94,0.9),rgba(22,163,74,0.9));border-color:rgba(34,197,94,0.3);color:white;box-shadow:0 0 20px rgba(34,197,94,0.1)}
+
+/* ── Comparison Panel ──────────────────────────────────────────────────── */
+.comparison-panel{max-height:600px;overflow-y:auto}
+.comparison-card{transition:all 0.3s cubic-bezier(0.4,0,0.2,1);animation:slideUp 0.5s both}
+.comparison-card:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,0,0,0.2)}
+
+/* ── Export Buttons ────────────────────────────────────────────────────── */
+.export-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:10px;font-size:0.8rem;font-weight:500;transition:all 0.3s ease;border:1px solid transparent;cursor:pointer}
+.export-btn.pdf{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.15);color:rgba(239,68,68,0.8)}
+.export-btn.pdf:hover{background:rgba(239,68,68,0.15);transform:translateY(-1px);box-shadow:0 4px 15px rgba(239,68,68,0.1)}
+.export-btn.docx{background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.15);color:rgba(59,130,246,0.8)}
+.export-btn.docx:hover{background:rgba(59,130,246,0.15);transform:translateY(-1px);box-shadow:0 4px 15px rgba(59,130,246,0.1)}
+
+/* ── Notes Output ──────────────────────────────────────────────────────── */
+.notes-output h1{font-size:1.6rem;font-weight:700;margin-top:1.5rem;margin-bottom:0.75rem;background:linear-gradient(135deg,#e4e4e7,#a1a1aa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:0.4rem}
+.notes-output h2{font-size:1.3rem;font-weight:600;margin-top:1.25rem;margin-bottom:0.6rem;color:rgba(228,228,231,0.9)}
+.notes-output h3{font-size:1.1rem;font-weight:600;margin-top:1rem;margin-bottom:0.5rem;color:rgba(228,228,231,0.8)}
+.notes-output p{margin-bottom:0.75rem;line-height:1.7;color:rgba(228,228,231,0.75)}
+.notes-output ul,.notes-output ol{margin-left:1.5rem;margin-bottom:0.75rem}
+.notes-output li{margin-bottom:0.25rem;line-height:1.6;color:rgba(228,228,231,0.7)}
 .notes-output ul{list-style-type:disc}
 .notes-output ol{list-style-type:decimal}
-.notes-output code{background:#f1f5f9;padding:.15rem .4rem;border-radius:4px;font-size:.875rem;color:#b91c1c}
-.notes-output pre{background:#0f172a;color:#e2e8f0;padding:1rem;border-radius:8px;overflow-x:auto;margin-bottom:1rem;font-size:.875rem;line-height:1.5}
+.notes-output code{background:rgba(255,255,255,0.06);padding:0.15rem 0.4rem;border-radius:4px;font-size:0.875rem;color:rgba(251,191,36,0.9)}
+.notes-output pre{background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);padding:1rem;border-radius:12px;overflow-x:auto;margin-bottom:1rem;font-size:0.875rem;line-height:1.5}
 .notes-output pre code{background:transparent;color:inherit;padding:0;font-size:inherit}
-.notes-output blockquote{border-left:4px solid #3b82f6;padding-left:1rem;color:#64748b;font-style:italic;margin-bottom:.75rem}
-.notes-output hr{border:none;border-top:2px solid #e2e8f0;margin:1.5rem 0}
-.notes-output strong{font-weight:700;color:#0f172a}
+.notes-output blockquote{border-left:3px solid rgba(59,130,246,0.4);padding-left:1rem;color:rgba(228,228,231,0.5);font-style:italic;margin-bottom:0.75rem}
+.notes-output hr{border:none;border-top:1px solid rgba(255,255,255,0.06);margin:1.5rem 0}
+.notes-output strong{font-weight:700;color:rgba(228,228,231,0.95)}
+.notes-output a{color:rgba(59,130,246,0.8);text-decoration:none;transition:color 0.2s}
+.notes-output a:hover{color:rgba(59,130,246,1);text-decoration:underline}
+
+/* ── Notification Toast ────────────────────────────────────────────────── */
+.toast{position:fixed;bottom:24px;right:24px;z-index:9999;padding:14px 20px;border-radius:14px;font-size:0.85rem;font-weight:500;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid;animation:slideUp 0.4s cubic-bezier(0.4,0,0.2,1),fadeIn 0.3s;max-width:400px;pointer-events:none;transition:all 0.3s}
+.toast.success{background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.15);color:rgba(34,197,94,0.9)}
+.toast.error{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.15);color:rgba(239,68,68,0.9)}
+.toast.info{background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.15);color:rgba(59,130,246,0.9)}
+
+/* ── Progress Bar ──────────────────────────────────────────────────────── */
+.progress-bar{height:2px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;position:relative}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,rgba(59,130,246,0.6),rgba(34,197,94,0.6));border-radius:2px;transition:width 0.5s cubic-bezier(0.4,0,0.2,1);position:relative}
+.progress-bar-fill::after{content:'';position:absolute;right:0;top:0;width:20px;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3));animation:shimmer 2s infinite}
+
+/* ── File Uploaded Badge ───────────────────────────────────────────────── */
+.file-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:10px;font-size:0.8rem;transition:all 0.3s ease;border:1px solid rgba(34,197,94,0.12);background:rgba(34,197,94,0.04);color:rgba(34,197,94,0.8)}
+.file-badge:hover{background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.2)}
+
+/* ── Select ────────────────────────────────────────────────────────────── */
+select.glass-input{padding:6px 12px;border-radius:8px;font-size:0.8rem;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(228,228,231,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:28px}
+
+/* ── Ripple Effect ─────────────────────────────────────────────────────── */
+.ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,0.15);transform:scale(0);animation:ripple 0.6s linear;pointer-events:none}
+
+/* ── Misc ──────────────────────────────────────────────────────────────── */
+.shimmer-text{background:linear-gradient(90deg,rgba(228,228,231,0.3),rgba(228,228,231,0.6),rgba(228,228,231,0.3));background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shimmer 3s infinite}
+.gradient-text{background:linear-gradient(135deg,#60a5fa,#4ade80);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hover-lift{transition:transform 0.3s cubic-bezier(0.4,0,0.2,1),box-shadow 0.3s ease}
+.hover-lift:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,0.15)}
+
+/* ── Responsive ────────────────────────────────────────────────────────── */
+@media(max-width:640px){
+.message-bubble{max-width:92%}
+.step-line{width:40px}
+.toast{left:16px;right:16px;bottom:16px;max-width:none}
+}
 </style>
 </head>
-<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen font-sans antialiased">
+<body class="bg-grid min-h-screen font-sans antialiased relative">
+<div class="bg-glow"></div>
+<div class="bg-glow-2"></div>
 
-<header class="bg-white/80 backdrop-blur-md shadow-sm border-b border-slate-200/60 sticky top-0 z-50">
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+<!-- Floating Particles -->
+<div class="particle" style="width:300px;height:300px;background:radial-gradient(circle,rgba(59,130,246,0.08),transparent);top:10%;left:5%;animation:float1 20s ease-in-out infinite;"></div>
+<div class="particle" style="width:200px;height:200px;background:radial-gradient(circle,rgba(34,197,94,0.06),transparent);bottom:20%;right:10%;animation:float2 15s ease-in-out infinite;"></div>
+<div class="particle" style="width:150px;height:150px;background:radial-gradient(circle,rgba(147,51,234,0.05),transparent);top:40%;right:30%;animation:float1 25s ease-in-out infinite;"></div>
+<div class="particle" style="width:250px;height:250px;background:radial-gradient(circle,rgba(59,130,246,0.04),transparent);bottom:10%;left:20%;animation:float2 18s ease-in-out infinite;"></div>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 pointer-events-none"></div>
+
+<!-- Header -->
+<header class="glass sticky top-3 z-50 mx-4 sm:mx-6 lg:mx-8 max-w-7xl lg:mx-auto rounded-2xl animate-fade-in">
+<div class="px-4 sm:px-6 py-3 flex items-center justify-between">
 <div class="flex items-center gap-3">
-<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-md"><i class="fas fa-brain text-white text-lg"></i></div>
-<div><h1 class="text-lg font-bold text-slate-900 leading-tight">Vermax</h1><p class="text-xs text-slate-500 leading-tight">Notes Updater</p></div>
+<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center shadow-lg shadow-primary-500/15 flex-shrink-0">
+<i class="fas fa-brain text-white text-lg"></i>
 </div>
-<div class="flex items-center gap-4">
-<span id="healthBadge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500"><span class="w-2 h-2 rounded-full bg-slate-300"></span> Checking...</span>
-<a href="https://github.com/RyanM314/web_agent.git" target="_blank" rel="noopener noreferrer" class="text-slate-400 hover:text-slate-600 transition-colors"><i class="fab fa-github text-xl"></i></a>
+<div>
+<a href="#" class="text-lg font-bold text-white hover:text-primary-300 transition-colors tracking-tight">Vermax</a>
+<p class="text-xs text-slate-500 leading-tight">AI Agentic RAG Assistant</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<span id="healthBadge" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium glass">
+<span class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span> Checking...
+</span>
+<button onclick="toggleTheme()" class="btn-ghost w-8 h-8 rounded-lg flex items-center justify-center" title="Toggle theme">
+<i class="fas fa-moon text-sm"></i>
+</button>
+<a href="https://github.com/RyanM314/web_agent.git" target="_blank" rel="noopener noreferrer" class="btn-ghost w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-white" title="GitHub">
+<i class="fab fa-github text-lg"></i>
+</a>
 </div>
 </div>
 </header>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+<main class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
 
-<div class="hidden sm:flex items-center justify-center gap-0 mb-2">
-<div class="step-item active"><div class="step-circle">1</div><span class="step-label">Upload</span></div>
-<div class="step-line"></div>
-<div class="step-item"><div class="step-circle">2</div><span class="step-label">Request</span></div>
-<div class="step-line"></div>
-<div class="step-item"><div class="step-circle">3</div><span class="step-label">Process</span></div>
-<div class="step-line"></div>
-<div class="step-item"><div class="step-circle">4</div><span class="step-label">Export</span></div>
+<!-- Steps Progress -->
+<div id="stepProgress" class="hidden sm:flex items-center justify-center gap-0 mb-10 animate-fade-in">
+<div class="step-item active" data-step="1">
+<div class="step-circle">1</div>
+<span class="step-label text-xs font-medium text-slate-500">Upload</span>
 </div>
-<style>.step-item{display:flex;flex-direction:column;align-items:center;gap:4px}.step-circle{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;transition:all .3s;background:#2563eb;color:white;box-shadow:0 0 0 4px rgba(37,99,235,.15)}.step-item .step-label{color:#2563eb;font-weight:600}.step-line{width:80px;height:2px;background:#e2e8f0;margin-bottom:20px}</style>
-
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-<section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 fade-in">
-<div class="flex items-center gap-2 mb-4">
-<span class="w-7 h-7 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center text-xs font-bold">1</span>
-<h2 class="text-base font-semibold text-slate-800">Upload Lecture Notes</h2>
-<span class="ml-auto text-[10px] uppercase tracking-wider text-primary-500 font-semibold bg-primary-50 px-2 py-0.5 rounded">FR1</span>
+<div class="step-line"></div>
+<div class="step-item" data-step="2">
+<div class="step-circle">2</div>
+<span class="step-label text-xs font-medium text-slate-500">Request</span>
 </div>
-<div id="dropZone" class="relative border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer hover:border-primary-400 hover:bg-primary-50/30 transition-all duration-200">
+<div class="step-line"></div>
+<div class="step-item" data-step="3">
+<div class="step-circle">3</div>
+<span class="step-label text-xs font-medium text-slate-500">Process</span>
+</div>
+<div class="step-line"></div>
+<div class="step-item" data-step="4">
+<div class="step-circle"><i class="fas fa-download text-xs"></i></div>
+<span class="step-label text-xs font-medium text-slate-500">Export</span>
+</div>
+</div>
+
+<!-- Welcome / Chat Area -->
+<div id="welcomeArea" class="flex flex-col items-center justify-center py-20 px-4 animate-fade-in">
+<div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-400/20 to-accent-400/20 border border-primary-500/10 flex items-center justify-center mb-6 hover-lift cursor-pointer" onclick="document.getElementById('fileInput').click()">
+<i class="fas fa-robot text-4xl text-primary-400"></i>
+</div>
+<h1 class="text-3xl sm:text-4xl font-bold text-center mb-3 gradient-text">How can I help you today?</h1>
+<p class="text-slate-500 text-center max-w-md mb-8">Upload your lecture notes and describe what updates you'd like to make. I'll research, compare, and generate updated content.</p>
+<div class="flex flex-wrap gap-3 justify-center">
+<button onclick="document.getElementById('fileInput').click()" class="btn-primary inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium">
+<i class="fas fa-cloud-upload-alt"></i> Upload Notes
+</button>
+<button onclick="document.getElementById('promptInput').focus()" class="btn-outline inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium">
+<i class="fas fa-pen"></i> Write Request
+</button>
+</div>
+</div>
+
+<!-- Main Chat Interface -->
+<div id="chatInterface" class="hidden space-y-6">
+<!-- Upload Section (collapsible) -->
+<div id="uploadSection" class="glass-card rounded-2xl p-6 animate-fade-in-up stagger-1">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-3">
+<span class="w-8 h-8 rounded-lg bg-primary-500/10 border border-primary-500/10 flex items-center justify-center">
+<i class="fas fa-cloud-upload-alt text-primary-400 text-sm"></i>
+</span>
+<div>
+<h2 class="text-sm font-semibold text-white">Lecture Notes</h2>
+<p class="text-xs text-slate-500">Upload a document to get started</p>
+</div>
+</div>
+<span class="text-[10px] uppercase tracking-wider text-primary-400 font-semibold bg-primary-500/10 px-2.5 py-1 rounded-full border border-primary-500/10">Step 1</span>
+</div>
+<div id="dropZone" class="drop-zone">
 <input type="file" id="fileInput" accept=".txt,.pdf,.docx" class="hidden" title="Upload a lecture notes file (TXT, PDF, or DOCX)" />
-<div id="dropContent" class="flex flex-col items-center gap-3">
-<div class="w-14 h-14 rounded-full bg-primary-50 flex items-center justify-center"><i class="fas fa-cloud-upload-alt text-2xl text-primary-400"></i></div>
-<div><p class="text-sm font-medium text-slate-700"><span class="text-primary-600 hover:text-primary-700">Click to upload</span> or drag and drop</p><p class="text-xs text-slate-400 mt-1">TXT, PDF, or DOCX (max 50 MB)</p></div>
+<div id="dropContent" class="flex flex-col items-center gap-3 relative z-10">
+<div class="w-14 h-14 rounded-full bg-primary-500/10 border border-primary-500/10 flex items-center justify-center drop-icon transition-transform duration-300">
+<i class="fas fa-cloud-upload-alt text-2xl text-primary-400"></i>
 </div>
-<div id="uploadedFile" class="hidden flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
-<i class="fas fa-file-alt text-green-500 text-lg"></i>
-<div class="flex-1 text-left"><p id="uploadedFilename" class="text-sm font-medium text-green-800 truncate"></p><p id="uploadedDocId" class="text-xs text-green-600 font-mono"></p></div>
-<button onclick="resetUpload()" class="text-slate-400 hover:text-red-500 transition-colors" title="Remove"><i class="fas fa-times"></i></button>
+<div>
+<p class="text-sm font-medium text-slate-300"><span class="text-primary-400 hover:text-primary-300 transition-colors cursor-pointer">Click to upload</span> or drag and drop</p>
+<p class="text-xs text-slate-600 mt-1">TXT, PDF, or DOCX <span class="mx-1.5">•</span> max 50 MB</p>
 </div>
 </div>
-<div id="uploadProgress" class="hidden mt-3"><div class="flex items-center gap-2 text-sm text-slate-600 mb-1"><i class="fas fa-spinner spinner text-primary-500"></i><span>Processing upload...</span></div><div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden"><div class="bg-primary-500 h-full rounded-full animate-pulse" style="width:60%"></div></div></div>
-</section>
+<div id="uploadedFile" class="hidden items-center gap-3 p-3 file-badge w-full relative z-10">
+<div class="w-10 h-10 rounded-lg bg-accent-500/10 flex items-center justify-center flex-shrink-0">
+<i class="fas fa-file-alt text-accent-400 text-lg"></i>
+</div>
+<div class="flex-1 min-w-0">
+<p id="uploadedFilename" class="text-sm font-medium text-accent-300 truncate"></p>
+<p id="uploadedDocId" class="text-xs text-accent-500/70 font-mono"></p>
+</div>
+<button onclick="resetUpload()" class="btn-ghost w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 hover:text-red-400" title="Remove file">
+<i class="fas fa-times text-sm"></i>
+</button>
+</div>
+</div>
+<div id="uploadProgress" class="hidden mt-4 glass rounded-xl p-4">
+<div class="flex items-center gap-3 mb-3">
+<div class="w-8 h-8 rounded-full bg-primary-500/10 flex items-center justify-center">
+<i class="fas fa-spinner spinner text-primary-400 text-sm" style="animation:spin 0.8s linear infinite"></i>
+</div>
+<div>
+<p class="text-sm text-slate-300 font-medium">Processing upload...</p>
+<p class="text-xs text-slate-500">Parsing, chunking, and indexing your document</p>
+</div>
+</div>
+<div class="progress-bar">
+<div class="progress-bar-fill" style="width:60%"></div>
+</div>
+</div>
+</div>
 
-<section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 fade-in">
-<div class="flex items-center gap-2 mb-4">
-<span class="w-7 h-7 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center text-xs font-bold">2</span>
-<h2 class="text-base font-semibold text-slate-800">Update Request</h2>
-<span class="ml-auto text-[10px] uppercase tracking-wider text-primary-500 font-semibold bg-primary-50 px-2 py-0.5 rounded">FR2</span>
+<!-- Prompt Section -->
+<div id="promptSection" class="glass-card rounded-2xl p-6 animate-fade-in-up stagger-2">
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-3">
+<span class="w-8 h-8 rounded-lg bg-primary-500/10 border border-primary-500/10 flex items-center justify-center">
+<i class="fas fa-message text-primary-400 text-sm"></i>
+</span>
+<div>
+<h2 class="text-sm font-semibold text-white">Update Request</h2>
+<p class="text-xs text-slate-500">Describe what you'd like to update</p>
 </div>
-<textarea id="promptInput" rows="5" class="w-full border border-slate-300 rounded-xl p-4 text-sm text-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none resize-y transition-shadow" placeholder="Describe what you want to update...&#10;&#10;Example: Update the section on neural network backpropagation to include the newer AdamW optimiser and dropout regularisation."></textarea>
-<div class="flex items-center gap-2 mt-2">
-<label class="text-xs text-slate-500 font-medium">Top-K chunks:</label>
-<select id="topKSelect" title="Number of top-K chunks to retrieve" class="text-xs border border-slate-300 rounded-lg px-2 py-1 bg-white text-slate-700"><option value="3">3</option><option value="5" selected>5</option><option value="8">8</option><option value="10">10</option></select>
+</div>
+<span class="text-[10px] uppercase tracking-wider text-primary-400 font-semibold bg-primary-500/10 px-2.5 py-1 rounded-full border border-primary-500/10">Step 2</span>
+</div>
+<div class="relative">
+<textarea id="promptInput" rows="4" class="w-full glass-input rounded-xl p-4 pr-12 text-sm resize-y transition-shadow placeholder:text-slate-600 min-h-[100px]" placeholder="Describe what you want to update...&#10;&#10;Example: Update the section on neural network backpropagation to include the newer AdamW optimiser and dropout regularisation."></textarea>
+<button id="sendPromptBtn" onclick="runAgenticRag()" disabled class="absolute bottom-4 right-4 w-9 h-9 rounded-lg btn-primary flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed" title="Send (Ctrl+Enter)">
+<i class="fas fa-arrow-up text-sm"></i>
+</button>
+</div>
+<div class="flex items-center gap-3 mt-3">
+<div class="flex items-center gap-2">
+<label class="text-xs text-slate-500 font-medium flex items-center gap-1.5"><i class="fas fa-layer-group text-xs"></i> Top-K:</label>
+<select id="topKSelect" title="Number of top-K chunks to retrieve" class="glass-input text-xs rounded-lg px-3 py-1.5">
+<option value="3">3</option>
+<option value="5" selected>5</option>
+<option value="8">8</option>
+<option value="10">10</option>
+</select>
+</div>
 <div class="flex-1"></div>
-<span id="charCount" class="text-xs text-slate-400">0 / 10,000</span>
+<span id="charCount" class="text-xs text-slate-600">0 / 10,000</span>
 </div>
-</section>
 </div>
 
-<section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6 fade-in">
-<div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-<button id="processBtn" onclick="runAgenticRag()" disabled class="inline-flex items-center gap-3 px-8 py-3.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/20 hover:from-primary-600 hover:to-primary-700 hover:shadow-xl hover:shadow-primary-500/30 disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-500 disabled:shadow-none disabled:cursor-not-allowed transition-all duration-200">
-<i id="btnIcon" class="fas fa-magic"></i><span id="btnText">Run Agentic Update</span>
+<!-- Process & Status Section -->
+<div id="processSection" class="glass-card rounded-2xl p-6 animate-fade-in-up stagger-3">
+<div class="flex items-center gap-3">
+<button id="processBtn" onclick="runAgenticRag()" disabled class="btn-primary inline-flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-semibold">
+<i id="btnIcon" class="fas fa-wand-magic-sparkles"></i>
+<span id="btnText">Run Agentic Update</span>
 </button>
 <div class="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-<span id="statusDocId" class="hidden"><i class="fas fa-file text-primary-400 mr-1"></i>Doc: <span class="font-mono text-slate-600">&mdash;</span></span>
-<span id="statusSessionId" class="hidden"><i class="fas fa-session text-accent-500 mr-1"></i>Session: <span class="font-mono text-slate-600">&mdash;</span></span>
-<span id="statusIteration" class="hidden"><i class="fas fa-redo text-accent-500 mr-1"></i>Iteration: <span class="font-mono text-slate-600">1</span></span>
+<span id="statusDocId" class="hidden flex items-center gap-1.5">
+<i class="fas fa-file text-primary-400 text-xs"></i><span class="font-mono text-slate-400">—</span>
+</span>
+<span id="statusSessionId" class="hidden flex items-center gap-1.5">
+<i class="fas fa-fingerprint text-accent-400 text-xs"></i><span class="font-mono text-slate-400">—</span>
+</span>
+<span id="statusIteration" class="hidden flex items-center gap-1.5">
+<i class="fas fa-rotate text-accent-400 text-xs"></i>Iteration: <span class="font-mono text-slate-400">1</span>
+</span>
 </div>
 </div>
-<div id="loadingBar" class="hidden mt-4"><div class="flex items-center gap-3 mb-2"><i class="fas fa-spinner spinner text-primary-500"></i><span id="loadingText" class="text-sm text-slate-600">Processing...</span></div><div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden"><div class="bg-gradient-to-r from-primary-500 to-accent-500 h-full rounded-full animate-pulse" style="width:45%"></div></div></div>
-<div id="errorAlert" class="hidden mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 fade-in"><i class="fas fa-exclamation-triangle mr-2"></i><span id="errorText"></span></div>
-<div id="quotaBanner" class="hidden mt-4 p-4 rounded-xl border text-sm bg-red-50 border-red-200 text-red-700 fade-in">
-<div class="flex items-start gap-3"><i class="fas fa-exclamation-triangle mt-0.5 text-red-400"></i><div><strong class="font-semibold">Gemini API Quota Exhausted</strong><p id="quotaMsg" class="mt-1"></p><p id="quotaCountdown" class="mt-1 text-xs"></p></div></div>
+<div id="loadingBar" class="hidden mt-5 glass rounded-xl p-4 animate-fade-in">
+<div class="flex items-center gap-3 mb-3">
+<div class="w-8 h-8 rounded-full bg-primary-500/10 flex items-center justify-center">
+<i class="fas fa-spinner text-primary-400 text-sm" style="animation:spin 0.8s linear infinite"></i>
 </div>
+<div>
+<p id="loadingText" class="text-sm text-slate-300 font-medium">Processing...</p>
+<p class="text-xs text-slate-500">Retrieving chunks, researching, and generating updates</p>
+</div>
+</div>
+<div class="progress-bar">
+<div class="progress-bar-fill" style="width:45%"></div>
+</div>
+</div>
+<div id="errorAlert" class="hidden mt-4 p-4 rounded-xl text-sm glass border-red-500/20 text-red-400 animate-fade-in">
+<i class="fas fa-exclamation-triangle mr-2"></i><span id="errorText"></span>
+</div>
+<div id="quotaBanner" class="hidden mt-4 p-5 rounded-xl text-sm glass border-yellow-500/20 text-yellow-400 animate-fade-in">
+<div class="flex items-start gap-3">
+<div class="w-8 h-8 rounded-full bg-yellow-500/10 flex items-center justify-center flex-shrink-0">
+<i class="fas fa-exclamation-triangle text-yellow-400 text-sm"></i>
+</div>
+<div>
+<strong class="font-semibold text-yellow-300">Gemini API Quota Exhausted</strong>
+<p id="quotaMsg" class="mt-1 text-yellow-400/80"></p>
+<p id="quotaCountdown" class="mt-1 text-xs text-yellow-500/60"></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Output / Results Section -->
+<div id="outputSection" class="hidden space-y-6">
+<!-- Result Message Banner -->
+<div id="resultMessage" class="glass rounded-xl p-4 text-sm text-blue-400 border-blue-500/10 flex items-start gap-3 animate-fade-in">
+<i class="fas fa-circle-check mt-0.5 text-blue-400"></i>
+<span></span>
+<button class="ml-auto btn-ghost w-6 h-6 rounded flex items-center justify-center flex-shrink-0" onclick="this.parentElement.remove()" title="Dismiss message" aria-label="Dismiss message">
+<i class="fas fa-times text-xs"></i>
+</button>
+</div>
+
+<!-- Section Comparisons -->
+<section class="glass-card rounded-2xl p-6 animate-fade-in-up stagger-4">
+<div class="flex items-center gap-3 mb-5">
+<div class="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/10 flex items-center justify-center">
+<i class="fas fa-not-equal text-purple-400 text-sm"></i>
+</div>
+<div class="flex-1">
+<h3 class="text-sm font-semibold text-white">Section Comparisons</h3>
+<p class="text-xs text-slate-500">Old vs new — side by side</p>
+</div>
+<span id="comparisonCount" class="text-xs glass rounded-full px-3 py-1 text-slate-400">0 sections</span>
+</div>
+<div id="comparisons" class="space-y-4 comparison-panel scroll-custom"></div>
 </section>
 
-<div id="outputSection" class="hidden space-y-6 fade-in">
-<!-- Self-correction banner intentionally removed in production UI -->
-<div id="resultMessage" class="p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800 flex items-start gap-3"><i class="fas fa-info-circle mt-0.5 text-blue-400"></i><span></span></div>
-
-<!-- Research sources UI removed for production (kept server-side) -->
-
-<section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6">
-<div class="flex items-center gap-2 mb-4"><i class="fas fa-not-equal text-slate-400"></i><h3 class="text-lg font-bold text-slate-900">Section Comparisons</h3><span id="comparisonCount" class="ml-auto text-sm bg-slate-100 text-slate-700 px-3 py-1 rounded-full">0 sections</span></div>
-<div id="comparisons" class="space-y-4"></div>
-</section>
-
-<section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-6">
-<div class="flex items-center justify-between mb-4 flex-wrap gap-3">
-<div class="flex items-center gap-2"><i class="fas fa-file-alt text-slate-400"></i><h3 class="text-sm font-semibold text-slate-700">Updated Notes</h3></div>
+<!-- Updated Notes -->
+<section class="glass-card rounded-2xl p-6 animate-fade-in-up stagger-5">
+<div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-accent-500/10 border border-accent-500/10 flex items-center justify-center">
+<i class="fas fa-file-alt text-accent-400 text-sm"></i>
+</div>
+<div>
+<h3 class="text-sm font-semibold text-white">Updated Notes</h3>
+<p class="text-xs text-slate-500">Your enhanced document</p>
+</div>
+</div>
 <div class="flex items-center gap-2">
-<button onclick="exportNotes('pdf')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-600 hover:bg-red-100 transition-colors"><i class="fas fa-file-pdf"></i> PDF</button>
-<button onclick="exportNotes('docx')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"><i class="fas fa-file-word"></i> DOCX</button>
+<button onclick="exportNotes('pdf')" class="export-btn pdf"><i class="fas fa-file-pdf"></i> PDF</button>
+<button onclick="exportNotes('docx')" class="export-btn docx"><i class="fas fa-file-word"></i> DOCX</button>
 </div>
 </div>
-<div id="fullNotesOutput" class="notes-output bg-slate-50 rounded-xl p-4 sm:p-6 border border-slate-200 max-h-[600px] overflow-y-auto comparison-panel"></div>
+<div id="fullNotesOutput" class="notes-output glass rounded-xl p-4 sm:p-6 max-h-[600px] overflow-y-auto scroll-custom"></div>
 </section>
 
-<section class="bg-white rounded-2xl shadow-sm border border-accent-200/80 p-6">
+<!-- Refinement Section -->
+<section class="glass-card rounded-2xl p-6 border-accent-500/10 animate-fade-in-up stagger-6">
 <div class="flex items-center justify-between mb-4">
-<div class="flex items-center gap-2"><span class="w-6 h-6 rounded-full bg-accent-100 text-accent-600 flex items-center justify-center text-xs font-bold"><i class="fas fa-redo"></i></span><h3 class="text-sm font-semibold text-slate-700">Refine Further</h3></div>
-<span id="iterationInfo" class="text-xs text-slate-400">Iteration 1</span>
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-accent-500/10 border border-accent-500/10 flex items-center justify-center">
+<i class="fas fa-rotate text-accent-400 text-sm"></i>
 </div>
-<p class="text-xs text-slate-500 mb-3">Not satisfied? Submit a follow-up prompt to refine the generated output.</p>
+<div>
+<h3 class="text-sm font-semibold text-white">Refine Further</h3>
+<p class="text-xs text-slate-500">Not satisfied? Send a follow-up prompt</p>
+</div>
+</div>
+<span id="iterationInfo" class="text-xs text-slate-600 bg-white/5 rounded-full px-3 py-1">Iteration 1</span>
+</div>
 <div class="flex gap-3">
-<textarea id="refinementInput" rows="2" class="flex-1 border border-slate-300 rounded-xl p-3 text-sm text-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-accent-500/20 focus:border-accent-500 outline-none resize-y transition-shadow" placeholder="E.g. Make the section on supervised learning more concise..."></textarea>
-<button onclick="runRefinement()" class="self-end inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-accent-500 text-white shadow-md hover:bg-accent-600 transition-all"><i class="fas fa-chevron-right"></i> Refine</button>
+<div class="flex-1 relative">
+<textarea id="refinementInput" rows="2" class="w-full glass-input rounded-xl p-3 pr-12 text-sm resize-y transition-shadow placeholder:text-slate-600 min-h-[60px]" placeholder="E.g. Make the section on supervised learning more concise..."></textarea>
+<button onclick="runRefinement()" class="absolute bottom-3 right-3 w-8 h-8 rounded-lg btn-accent flex items-center justify-center" title="Send">
+<i class="fas fa-arrow-up text-xs"></i>
+</button>
+</div>
 </div>
 </section>
 </div>
 
-<footer class="text-center text-xs text-slate-400 py-6 border-t border-slate-200/60 mt-12"><p> &copy; 2026 Vermax Notes Updater. All rights reserved. </p></footer>
+<!-- Footer -->
+<footer class="text-center text-xs text-slate-700 py-6 mt-12 border-t border-white/5 animate-fade-in">
+<p>© 2026 <span class="text-slate-500">Vermax</span> — AI Agentic RAG Assistant. All rights reserved.</p>
+</footer>
 </main>
 
 <script>
+// ── State ───────────────────────────────────────────────────────────────
 var STATE={documentId:null,filename:null,sessionId:null,iteration:0,fullUpdatedNotes:'',processedAt:null,researchSources:[],sectionComparisons:[],selfCorrection:null,modelUsed:''};
 var API_BASE='https://agent-wiuf.onrender.com';
 var QUOTA_POLL_INTERVAL=null;
 
-document.addEventListener('DOMContentLoaded',function(){checkHealth();checkQuota();setupUpload();setupPromptInput();updateProcessBtn();QUOTA_POLL_INTERVAL=setInterval(checkQuota,30000);});
+// ── DOM Ready ───────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',function(){
+checkHealth();checkQuota();setupUpload();setupPromptInput();updateProcessBtn();
+QUOTA_POLL_INTERVAL=setInterval(checkQuota,30000);
+setupParticles();
+});
 
-/* HEALTH */
+// ── Particles Setup ─────────────────────────────────────────────────────
+function setupParticles(){/* particles are in the DOM already - noop */}
+
+// ── Toast System ────────────────────────────────────────────────────────
+function showToast(message,type){
+type=type||'info';
+var container=document.getElementById('toastContainer');
+var icons={success:'fa-circle-check',error:'fa-exclamation-triangle',info:'fa-circle-info'};
+var toast=document.createElement('div');
+toast.className='toast '+type+' pointer-events-auto cursor-pointer flex items-center gap-2.5';
+toast.innerHTML='<i class="fas '+icons[type]+'"></i>'+message;
+container.appendChild(toast);
+setTimeout(function(){if(toast.parentNode)toast.remove();},4000);
+toast.addEventListener('click',function(){toast.remove();});
+}
+
+// ── Health Check ────────────────────────────────────────────────────────
 async function checkHealth(){
 var badge=document.getElementById('healthBadge');
 try{
@@ -175,13 +530,13 @@ if(!resp.ok)throw Error('Not OK');
 var data=await resp.json();
 var ok=data.status==='healthy';
 badge.innerHTML='<span class="w-2 h-2 rounded-full '+(ok?'bg-green-500':'bg-yellow-500')+'"></span> '+(ok?'All Systems OK':'Degraded');
-badge.className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium '+(ok?'bg-green-50 text-green-700':'bg-yellow-50 text-yellow-700');
+badge.className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium glass '+(ok?'text-green-400':'text-yellow-400');
 }catch(e){
 badge.innerHTML='<span class="w-2 h-2 rounded-full bg-red-500"></span> Offline';
-badge.className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700';
+badge.className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium glass text-red-400';
 }}
 
-/* QUOTA */
+// ── Quota ───────────────────────────────────────────────────────────────
 async function checkQuota(){
 try{
 var resp=await fetch(API_BASE+'/api/v1/quota/status');
@@ -199,8 +554,9 @@ var banner=document.getElementById('quotaBanner');
 banner.classList.remove('hidden');
 document.getElementById('quotaMsg').textContent=msg;
 document.getElementById('processBtn').disabled=true;
+document.getElementById('sendPromptBtn').disabled=true;
 document.getElementById('healthBadge').innerHTML='<span class="w-2 h-2 rounded-full bg-red-500"></span> Quota Exhausted';
-document.getElementById('healthBadge').className='inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700';
+document.getElementById('healthBadge').className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium glass text-red-400';
 if(quotaCountdownInterval)clearInterval(quotaCountdownInterval);
 quotaStartTime=Date.now()/1000;
 quotaCountdownInterval=setInterval(function(){
@@ -208,8 +564,8 @@ var now=Date.now()/1000;
 var remaining=resetInSeconds-(now-quotaStartTime);
 if(remaining<=0){hideQuotaBanner();return;}
 var cd=document.getElementById('quotaCountdown');
-if(remaining>3600){cd.textContent='Auto-resumes in ~'+Math.round(remaining/3600)+'h '+(Math.round((remaining%3600)/60))+'m';}
-else if(remaining>60){cd.textContent='Auto-resumes in ~'+Math.round(remaining/60)+'m '+(Math.round(remaining%60))+'s';}
+if(remaining>3600){cd.textContent='Auto-resumes in ~'+Math.round(remaining/3600)+'h '+Math.round((remaining%3600)/60)+'m';}
+else if(remaining>60){cd.textContent='Auto-resumes in ~'+Math.round(remaining/60)+'m '+Math.round(remaining%60)+'s';}
 else{cd.textContent='Auto-resumes in ~'+Math.round(remaining)+'s';}
 },1000);
 }
@@ -221,7 +577,7 @@ updateProcessBtn();
 checkHealth();
 }
 
-/* UPLOAD */
+// ── Upload ───────────────────────────────────────────────────────────────
 function setupUpload(){
 var dz=document.getElementById('dropZone'),fi=document.getElementById('fileInput');
 dz.addEventListener('click',function(e){if(!e.target.closest('button'))fi.click();});
@@ -233,34 +589,41 @@ dz.addEventListener('drop',function(e){e.preventDefault();dz.classList.remove('d
 
 async function handleFile(file){
 var ext=file.name.split('.').pop().toLowerCase();
-if(!['txt','pdf','docx'].includes(ext)){showError('Unsupported file type.".'+ext+'.". Allowed: TXT, PDF, DOCX.');return;}
-if(file.size>50*1024*1024){showError('File exceeds 50 MB limit.');return;}
+if(!['txt','pdf','docx'].includes(ext)){showToast('Unsupported file type: .'+ext+'. Allowed: TXT, PDF, DOCX.','error');return;}
+if(file.size>50*1024*1024){showToast('File exceeds 50 MB limit.','error');return;}
 document.getElementById('dropContent').classList.add('hidden');
 document.getElementById('uploadProgress').classList.remove('hidden');
+document.getElementById('chatInterface').classList.remove('hidden');
 var fd=new FormData();fd.append('file',file);
 try{
 var resp=await fetch(API_BASE+'/api/v1/upload',{method:'POST',body:fd});
 var data=await resp.json();
 document.getElementById('uploadProgress').classList.add('hidden');
-if(!resp.ok){document.getElementById('dropContent').classList.remove('hidden');showError(data.detail||'Upload failed.');return;}
+if(!resp.ok){document.getElementById('dropContent').classList.remove('hidden');showToast(data.detail||'Upload failed.','error');return;}
 STATE.documentId=data.document_id;STATE.filename=data.filename;
 document.getElementById('uploadedFilename').textContent=data.filename;
 document.getElementById('uploadedDocId').textContent='ID: '+data.document_id.slice(0,8)+'...';
 document.getElementById('uploadedFile').classList.remove('hidden');
 document.getElementById('dropContent').classList.add('hidden');
-showSuccess(data.filename+' uploaded - '+data.total_chunks+' chunks indexed.');
-updateProcessBtn();updateStatusBar();
+showToast(data.filename+' uploaded — '+data.total_chunks+' chunks indexed.','success');
+updateProcessBtn();updateStatusBar();updateSteps();
+document.getElementById('welcomeArea').classList.add('hidden');
 }catch(err){
 document.getElementById('uploadProgress').classList.add('hidden');
 document.getElementById('dropContent').classList.remove('hidden');
-showError('Upload error: '+err.message);
+showToast('Upload error: '+err.message,'error');
 }}
 
-function resetUpload(){STATE.documentId=null;STATE.filename=null;document.getElementById('uploadedFile').classList.add('hidden');document.getElementById('dropContent').classList.remove('hidden');document.getElementById('fileInput').value='';updateProcessBtn();updateStatusBar();}
+function resetUpload(){STATE.documentId=null;STATE.filename=null;document.getElementById('uploadedFile').classList.add('hidden');document.getElementById('dropContent').classList.remove('hidden');document.getElementById('fileInput').value='';updateProcessBtn();updateStatusBar();updateSteps();}
 
 function setupPromptInput(){var ta=document.getElementById('promptInput');ta.addEventListener('input',function(){document.getElementById('charCount').textContent=ta.value.length+' / 10,000';updateProcessBtn();});}
 
-function updateProcessBtn(){var btn=document.getElementById('processBtn');btn.disabled=!(STATE.documentId!==null&&document.getElementById('promptInput').value.trim().length>0);}
+function updateProcessBtn(){
+var btn=document.getElementById('processBtn');
+var sendBtn=document.getElementById('sendPromptBtn');
+var ready=STATE.documentId!==null&&document.getElementById('promptInput').value.trim().length>0;
+btn.disabled=!ready;sendBtn.disabled=!ready;
+}
 
 function updateStatusBar(){
 var docEl=document.getElementById('statusDocId'),sessEl=document.getElementById('statusSessionId'),iterEl=document.getElementById('statusIteration');
@@ -268,12 +631,26 @@ if(STATE.documentId){docEl.classList.remove('hidden');docEl.querySelector('span'
 if(STATE.sessionId){sessEl.classList.remove('hidden');sessEl.querySelector('span').textContent=STATE.sessionId.slice(0,8)+'...';iterEl.classList.remove('hidden');iterEl.querySelector('span').textContent=STATE.iteration;}else{sessEl.classList.add('hidden');iterEl.classList.add('hidden');}
 }
 
-/* AGENTIC RAG */
+function updateSteps(){
+var steps=document.querySelectorAll('.step-item');
+steps.forEach(function(s,i){
+s.classList.remove('active','completed');
+var stepNum=parseInt(s.dataset.step);
+if(stepNum===1&&STATE.documentId){s.classList.add('completed');}
+else if(stepNum===2&&STATE.sessionId){s.classList.add('completed');}
+else if(stepNum===3&&STATE.fullUpdatedNotes){s.classList.add('completed');}
+if(stepNum===2&&STATE.documentId&&!STATE.sessionId)s.classList.add('active');
+if(stepNum===3&&STATE.sessionId&&!STATE.fullUpdatedNotes)s.classList.add('active');
+if(stepNum===4&&STATE.fullUpdatedNotes)s.classList.add('active');
+});
+}
+
+// ── Agentic RAG ─────────────────────────────────────────────────────────
 async function runAgenticRag(){
 var prompt=document.getElementById('promptInput').value.trim();
 var topK=parseInt(document.getElementById('topKSelect').value);
-if(!STATE.documentId){showError('Please upload a document first.');return;}
-if(!prompt){showError('Please enter an update request.');return;}
+if(!STATE.documentId){showToast('Please upload a document first.','error');return;}
+if(!prompt){showToast('Please enter an update request.','error');return;}
 showLoading('Pacing requests to avoid rate limits...');hideError();
 var body={prompt:prompt,document_id:STATE.documentId,top_k:topK,max_research_sources:5};
 if(STATE.sessionId)body.session_id=STATE.sessionId;
@@ -283,102 +660,104 @@ var data=await resp.json();
 hideLoading();
 if(!resp.ok){
 if(resp.status===429&&data.quota_exhausted){showQuotaBanner(data.message,data.retry_after_seconds);return;}
-showError(data.detail||'Processing failed.');return;}
+showToast(data.detail||'Processing failed.','error');return;}
 STATE.sessionId=data.session_id;STATE.iteration=data.iteration_number;
 STATE.fullUpdatedNotes=data.full_updated_notes;STATE.processedAt=data.processed_at;
 STATE.researchSources=data.research_sources||[];STATE.sectionComparisons=data.section_comparisons||[];
 STATE.selfCorrection=data.self_correction||{};STATE.modelUsed=data.model_used;
 STATE.documentId=data.document_id;STATE.filename=data.filename;
-renderOutput(data);updateStatusBar();updateProcessBtn();scrollToOutput();
-}catch(err){hideLoading();showError('Network error: '+err.message);}
+renderOutput(data);updateStatusBar();updateProcessBtn();updateSteps();scrollToOutput();
+if(STATE.filename){document.getElementById('uploadedFilename').textContent=data.filename;document.getElementById('uploadedDocId').textContent='ID: '+data.document_id.slice(0,8)+'...';}
+showToast('Update complete!','success');
+}catch(err){hideLoading();showToast('Network error: '+err.message,'error');}
 }
 
 async function runRefinement(){
 var input=document.getElementById('refinementInput');
 var text=input.value.trim();
-if(!text){showError('Please enter a refinement request.');return;}
-if(!STATE.sessionId){showError('No active session.');return;}
+if(!text){showToast('Please enter a refinement request.','error');return;}
+if(!STATE.sessionId){showToast('No active session.','error');return;}
 document.getElementById('promptInput').value=text;
 document.getElementById('charCount').textContent=text.length+' / 10,000';
 await runAgenticRag();
 input.value='';
 }
 
+// ── Export ──────────────────────────────────────────────────────────────
 async function exportNotes(format){
 var text=STATE.fullUpdatedNotes;
-if(!text){showError('No notes to export.');return;}
+if(!text){showToast('No notes to export.','error');return;}
 var title=STATE.filename?STATE.filename.replace(/\.[^/.]+$/,''):'Updated Notes';
 var endpoint=format==='pdf'?'/api/v1/export/pdf':'/api/v1/export/docx';
 var ext=format==='pdf'?'pdf':'docx';
 try{
 var resp=await fetch(API_BASE+endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({markdown_text:text,title:title,document_id:STATE.documentId})});
-if(!resp.ok){var err=await resp.json().catch(function(){return{};});showError(err.detail||format.toUpperCase()+' export failed.');return;}
+if(!resp.ok){var err=await resp.json().catch(function(){return{};});showToast(err.detail||format.toUpperCase()+' export failed.','error');return;}
 var blob=await resp.blob();
 var url=URL.createObjectURL(blob);
 var a=document.createElement('a');a.href=url;a.download=title+'.'+ext;
 document.body.appendChild(a);a.click();document.body.removeChild(a);
 URL.revokeObjectURL(url);
-showSuccess(format.toUpperCase()+' downloaded successfully.');
-}catch(err){showError('Export error: '+err.message);}
+showToast(format.toUpperCase()+' downloaded successfully.','success');
+}catch(err){showToast('Export error: '+err.message,'error');}
 }
 
+// ── Render Output ───────────────────────────────────────────────────────
 function renderOutput(data){
-	var out=document.getElementById('outputSection');
-	out.classList.remove('hidden');
-	out.scrollIntoView({behavior:'smooth',block:'start'});
-	var msg=document.getElementById('resultMessage');
-	msg.querySelector('span').textContent=data.message;
-	msg.classList.remove('hidden');
-	// Self-correction banner and research sources are hidden in production UI.
-	renderComparisons(data.section_comparisons||[]);
-	renderMarkdown('fullNotesOutput',data.full_updated_notes);
-	document.getElementById('iterationInfo').textContent='Iteration '+data.iteration_number;
-}
-
-function renderResearchSources(sources){
-	// intentionally disabled in production UI - sources are still included in API responses
-	return;
+var out=document.getElementById('outputSection');
+out.classList.remove('hidden');
+out.scrollIntoView({behavior:'smooth',block:'start'});
+var msg=document.getElementById('resultMessage');
+msg.querySelector('span').textContent=data.message;
+msg.classList.remove('hidden');
+renderComparisons(data.section_comparisons||[]);
+renderMarkdown('fullNotesOutput',data.full_updated_notes);
+document.getElementById('iterationInfo').textContent='Iteration '+data.iteration_number;
+window.scrollTo({top:out.offsetTop-100,behavior:'smooth'});
 }
 
 function renderComparisons(comparisons){
-	var c=document.getElementById('comparisons');
-	document.getElementById('comparisonCount').textContent=comparisons.length+' section(s)';
-	c.innerHTML='';
-	if(!comparisons.length){c.innerHTML='<p class="text-sm text-slate-400">No comparisons available.</p>';return;}
-	comparisons.forEach(function(comp,idx){
-		var div=document.createElement('div');
-		div.className='border border-slate-200 rounded-xl overflow-hidden fade-in';
-		div.style.animationDelay=(idx*0.08)+'s';
-		var titleHTML = '<div class="flex items-center gap-2"><span class="w-7 h-7 rounded bg-primary-100 text-primary-600 flex items-center justify-center text-sm font-bold">'+(idx+1)+'</span><span class="text-lg font-bold text-slate-900">'+esc(comp.section_title)+'</span></div>';
-		var stateLabel = '<span class="text-sm text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">'+(comp.original_text==='(New section \u2014 not in original notes)'?'New Section':'Updated')+'</span>';
-		var originalBlock = '<div class="p-5"><p class="text-sm uppercase tracking-wider text-slate-500 font-semibold mb-2">Original</p><div class="text-sm text-slate-700 leading-relaxed comparison-panel max-h-72 overflow-y-auto">'+esc(comp.original_text)+'</div></div>';
-		var updatedBlock = '<div class="p-5 bg-green-50/50"><p class="text-sm uppercase tracking-wider text-green-600 font-semibold mb-2">Updated</p><div class="text-sm text-slate-900 leading-relaxed comparison-panel max-h-72 overflow-y-auto">'+esc(comp.updated_text)+'</div></div>';
-		div.innerHTML = '<div class="px-4 py-3 bg-slate-50 border-b border-slate-200">'+titleHTML+'<div class="ml-auto">'+stateLabel+'</div></div><div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200">'+originalBlock+updatedBlock+'</div><div class="px-4 py-3 bg-slate-50/80 border-t border-slate-200 text-sm text-slate-600 flex items-start gap-2"><i class="fas fa-exchange-alt text-slate-400 mt-0.5"></i><span>'+esc(comp.changes_summary)+'</span></div>';
-		c.appendChild(div);
-	});
+var c=document.getElementById('comparisons');
+document.getElementById('comparisonCount').textContent=comparisons.length+' section(s)';
+c.innerHTML='';
+if(!comparisons.length){c.innerHTML='<p class="text-sm text-slate-500 text-center py-8">No comparisons available.</p>';return;}
+comparisons.forEach(function(comp,idx){
+var div=document.createElement('div');
+div.className='comparison-card glass rounded-xl overflow-hidden';
+div.style.animationDelay=(idx*0.08)+'s';
+var isNew=comp.original_text==='(New section — not in original notes)';
+var titleHTML='<div class="flex items-center gap-2.5"><span class="w-7 h-7 rounded-lg bg-primary-500/10 text-primary-400 flex items-center justify-center text-xs font-bold">'+(idx+1)+'</span><span class="text-base font-semibold text-white">'+esc(comp.section_title)+'</span></div>';
+var stateLabel=isNew?'<span class="text-xs text-accent-400 bg-accent-500/10 px-2.5 py-0.5 rounded-full border border-accent-500/10 flex items-center gap-1.5"><i class="fas fa-plus text-2xs"></i> New Section</span>':'<span class="text-xs text-primary-400 bg-primary-500/10 px-2.5 py-0.5 rounded-full border border-primary-500/10 flex items-center gap-1.5"><i class="fas fa-pen text-2xs"></i> Updated</span>';
+var originalBlock='<div class="p-5"><p class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-3 flex items-center gap-1.5"><i class="fas fa-history"></i> Original</p><div class="text-sm text-slate-400 leading-relaxed max-h-72 overflow-y-auto scroll-custom">'+esc(comp.original_text)+'</div></div>';
+var updatedBlock='<div class="p-5 bg-accent-500/[0.02] border-t md:border-t-0 md:border-l border-white/5"><p class="text-xs uppercase tracking-wider text-accent-400 font-semibold mb-3 flex items-center gap-1.5"><i class="fas fa-sparkles"></i> Updated</p><div class="text-sm text-slate-300 leading-relaxed max-h-72 overflow-y-auto scroll-custom">'+esc(comp.updated_text)+'</div></div>';
+div.innerHTML='<div class="px-5 py-4 border-b border-white/5 flex items-center justify-between flex-wrap gap-2">'+titleHTML+stateLabel+'</div><div class="grid grid-cols-1 md:grid-cols-2">'+originalBlock+updatedBlock+'</div><div class="px-5 py-3 border-t border-white/5 text-sm text-slate-500 flex items-start gap-2.5"><i class="fas fa-exchange-alt text-primary-400/60 mt-0.5 text-xs"></i><span>'+esc(comp.changes_summary)+'</span></div>';
+c.appendChild(div);
+});
 }
 
 function renderMarkdown(containerId,md){
 var container=document.getElementById(containerId);
-if(!md){container.innerHTML='<p class="text-slate-400 italic">No content generated.</p>';return;}
+if(!md){container.innerHTML='<p class="text-slate-600 italic text-center py-8">No content generated.</p>';return;}
 var html=md.replace(/^>\s+(.+)$/gm,'<blockquote>$1</blockquote>');
 html=html.replace(/<blockquote>/g,'\x00BQ\x00').replace(/<\/blockquote>/g,'\x00BQe\x00');
 html=esc(html);
 html=html.replace(/\x00BQ\x00/g,'<blockquote>').replace(/\x00BQe\x00/g,'</blockquote>');
-html=html.replace(/^---$/gm,'<hr>').replace(/^######\s+(.+)$/gm,'<h6>$1</h6>').replace(/^#####\s+(.+)$/gm,'<h5>$1</h5>').replace(/^####\s+(.+)$/gm,'<h4>$1</h4>').replace(/^###\s+(.+)$/gm,'<h3>$1</h3>').replace(/^##\s+(.+)$/gm,'<h2>$1</h2>').replace(/^#\s+(.+)$/gm,'<h1>$1</h1>').replace(/```(\w*)\n([\s\S]*?)```/g,'<pre><code class="language-$1">$2</code></pre>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/__(.+?)__/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/_(.+?)_/g,'<em>$1</em>').replace(/~~(.+?)~~/g,'<del>$1</del>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/^(\s*)[-*+]\s+(.+)$/gm,'<li>$2</li>').replace(/^(\s*)\d+[.)]\s+(.+)$/gm,'<li>$2</li>').replace(/((?:<li>.*<\/li>\n?)+)/g,function(m){return '<ul>\n'+m.trim()+'\n</ul>';}).replace(/\n\n/g,'</p><p>').replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary-600 hover:underline">$1</a>');
+html=html.replace(/^---$/gm,'<hr>').replace(/^######\s+(.+)$/gm,'<h6>$1</h6>').replace(/^#####\s+(.+)$/gm,'<h5>$1</h5>').replace(/^####\s+(.+)$/gm,'<h4>$1</h4>').replace(/^###\s+(.+)$/gm,'<h3>$1</h3>').replace(/^##\s+(.+)$/gm,'<h2>$1</h2>').replace(/^#\s+(.+)$/gm,'<h1>$1</h1>').replace(/```(\w*)\n([\s\S]*?)```/g,'<pre><code class="language-$1">$2</code></pre>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/__(.+?)__/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/_(.+?)_/g,'<em>$1</em>').replace(/~~(.+?)~~/g,'<del>$1</del>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/^(\s*)[-*+]\s+(.+)$/gm,'<li>$2</li>').replace(/^(\s*)\d+[.)]\s+(.+)$/gm,'<li>$2</li>').replace(/((?:<li>.*<\/li>\n?)+)/g,function(m){return '<ul>\n'+m.trim()+'\n</ul>';}).replace(/\n\n/g,'</p><p>').replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer" class="text-primary-400 hover:text-primary-300 underline-offset-2 hover:underline">$1</a>');
 if(!html.match(/^<(h[1-6]|pre|ul|ol|blockquote|hr|table)/)){html='<p>'+html+'</p>';}
 container.innerHTML=html;
 container.querySelectorAll('pre code').forEach(function(block){try{hljs.highlightElement(block);}catch(e){}});
 }
 
-function showLoading(t){document.getElementById('loadingBar').classList.remove('hidden');document.getElementById('loadingText').textContent=t||'Processing...';document.getElementById('processBtn').disabled=true;}
-function hideLoading(){document.getElementById('loadingBar').classList.add('hidden');document.getElementById('processBtn').disabled=false;}
+// ── UI Helpers ──────────────────────────────────────────────────────────
+function showLoading(t){document.getElementById('loadingBar').classList.remove('hidden');document.getElementById('loadingText').textContent=t||'Processing...';document.getElementById('processBtn').disabled=true;document.getElementById('sendPromptBtn').disabled=true;}
+function hideLoading(){document.getElementById('loadingBar').classList.add('hidden');document.getElementById('processBtn').disabled=false;document.getElementById('sendPromptBtn').disabled=false;}
 function showError(msg){var el=document.getElementById('errorAlert');document.getElementById('errorText').textContent=msg;el.classList.remove('hidden');el.scrollIntoView({behavior:'smooth',block:'center'});}
 function hideError(){document.getElementById('errorAlert').classList.add('hidden');}
-function showSuccess(msg){var el=document.getElementById('resultMessage');el.querySelector('span').textContent=msg;el.className='p-4 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800 flex items-start gap-3 fade-in';el.classList.remove('hidden');}
-function scrollToOutput(){var el=document.getElementById('outputSection');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});}
+function scrollToOutput(){var el=document.getElementById('outputSection');if(el)setTimeout(function(){el.scrollIntoView({behavior:'smooth',block:'start'});},100);}
 function esc(t){if(!t)return '';var d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+function toggleTheme(){/* placeholder for future light/dark toggle */showToast('Theme toggle coming soon','info');}
 
+// ── Keyboard Shortcuts ──────────────────────────────────────────────────
 document.addEventListener('keydown',function(e){
 if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){
 var active=document.activeElement;
